@@ -1,6 +1,6 @@
 /* tslint:disable global-require, no-import-side-effect */
 import './dotenv';
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, webContents } from 'electron';
 import log, { LevelOption } from 'electron-log';
 // @ts-ignore: no declaration file
 import { format } from 'electron-log/lib/format';
@@ -13,9 +13,33 @@ import { getUrlToLoad } from './utils/dev';
 import { isPackaged } from './utils/env';
 import * as remoteMain from '@electron/remote/main';
 
+// Increase max listeners to accommodate multiple IPC channels during development
+ipcMain.setMaxListeners(200);
+
 bootServices(); // all side effects related to services (in main process)
 
 remoteMain.initialize();
+
+ipcMain.on('sei-relay', (event, targetWebContentsId: number, channel: string, ...args: any[]) => {
+  const wc = webContents.fromId(targetWebContentsId);
+  if (!wc) return;
+  // Backwards compatible relay:
+  // - For handshake messages (no payload), include sender webContentsId so the receiver can reply.
+  // - For regular messages, forward args unchanged to avoid shifting payload shapes.
+  if (channel === 'bx-api-perform' || channel === 'bx-api-subscribe') {
+    const senderWebContentsId = event.sender.id;
+    wc.send(channel, senderWebContentsId, ...args);
+    return;
+  }
+
+  if (args.length === 0) {
+    const senderWebContentsId = event.sender.id;
+    wc.send(channel, senderWebContentsId);
+    return;
+  }
+
+  wc.send(channel, ...args);
+});
 
 const loadWorker = () => {
   const worker = new BrowserWindow({

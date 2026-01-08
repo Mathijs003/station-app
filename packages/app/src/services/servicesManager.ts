@@ -1,5 +1,5 @@
 import { map } from 'ramda';
-import { firstConnectionHandler } from 'stream-electron-ipc';
+import { firstConnectionHandler } from './lib/firstConnectionHandler';
 import { servicesDuplexWorkerMainNamespace } from './api/const';
 import { LazyDuplex } from './api/lazyduplex';
 import { observeNewClients } from './common';

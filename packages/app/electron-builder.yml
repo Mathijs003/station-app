@@ -31,12 +31,12 @@ dmg:
 
 mac:
   target:
-#    - target: dmg
-#      arch:
-#        - universal
-    - target: zip
+    - target: dmg
       arch:
         - universal
+#    - target: zip
+#      arch:
+#        - universal
   artifactName: ${productName}.${ext}
   hardenedRuntime: true
   gatekeeperAssess: false

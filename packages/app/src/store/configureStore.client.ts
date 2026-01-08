@@ -9,7 +9,7 @@ import { observe } from 'redux-observers';
 import thunk from 'redux-thunk';
 // @ts-ignore: no declaration file
 import { client } from 'shared-redux';
-import { ElectronIpcRendererDuplex } from 'stream-electron-ipc';
+import { ElectronIpcRendererDuplex } from '../services/lib/ElectronIpcRendererDuplex';
 import observers from '../observers/index.renderer';
 import rootReducer from '../reducers';
 import { StationState } from '../types';

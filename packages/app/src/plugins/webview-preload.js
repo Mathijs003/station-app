@@ -1,6 +1,17 @@
   const { contextBridge, ipcRenderer } = require('electron');
   const { Observable } = require('rxjs');
 
+  const RELAY_CHANNEL = 'sei-relay';
+
+  const sendToCompat = (targetWebContentsId, channel, ...args) => {
+    if (typeof ipcRenderer.sendTo === 'function') {
+      ipcRenderer.sendTo(targetWebContentsId, channel, ...args);
+      return;
+    }
+
+    ipcRenderer.send(RELAY_CHANNEL, targetWebContentsId, channel, ...args);
+  };
+
   const sendPerformToProxy = (channel, payload) => {
     const p = new Promise(resolve => {
       ipcRenderer.once(`bx-api-perform-response-${channel}`, (_, result) => {
@@ -9,7 +20,7 @@
     });
     setTimeout(() => {
       ipcRenderer.invoke('get-worker-contents-id')
-          .then(workerWebContentsId => ipcRenderer.sendTo(workerWebContentsId, 'bx-api-perform', channel, payload));
+          .then(workerWebContentsId => sendToCompat(workerWebContentsId, 'bx-api-perform', channel, payload));
     }, 1);
     return p;
   };
@@ -18,7 +29,7 @@
     ipcRenderer.on(`bx-api-subscribe-response-${channel}`, listener);
     setTimeout(() => {
       ipcRenderer.invoke('get-worker-contents-id')
-          .then(workerWebContentsId => ipcRenderer.sendTo(workerWebContentsId, 'bx-api-subscribe', channel));
+          .then(workerWebContentsId => sendToCompat(workerWebContentsId, 'bx-api-subscribe', channel));
     }, 1);
   };
 

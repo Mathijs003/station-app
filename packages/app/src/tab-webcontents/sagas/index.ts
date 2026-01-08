@@ -1,4 +1,5 @@
 import { ipcRenderer } from 'electron';
+import ms = require('ms');
 import { SagaIterator } from 'redux-saga';
 import { all, call, delay, getContext, put, race, select, spawn, take } from 'redux-saga/effects';
 import { BrowserXAppWorker } from '../../app-worker';
@@ -59,9 +60,19 @@ import {
 } from '../selectors';
 import sleepingSagas from './sleeping';
 import closeCurrentTabSagas from './close-current-tab';
-import ms = require('ms');
 import { ContextMenuService } from '../../services/services/menu/interface';
-import services from '../../services/servicesManager';
+
+const RELAY_CHANNEL = 'sei-relay';
+
+const sendToCompat = (targetWebContentsId: number, channel: string, ...args: any[]) => {
+  const ipcAny: any = ipcRenderer;
+  if (typeof ipcAny.sendTo === 'function') {
+    ipcAny.sendTo(targetWebContentsId, channel, ...args);
+    return;
+  }
+
+  ipcRenderer.send(RELAY_CHANNEL, targetWebContentsId, channel, ...args);
+};
 
 let seenWebcontents = new Set();
 
@@ -270,7 +281,7 @@ function* interceptAutofill({ webcontentsId }: { webcontentsId: number }) {
   const clickChannel = serviceAddObserverChannel(autofillMenu, 'onClickItem', 'autofill-popup-value-selected');
 
   yield takeEveryWitness(clickChannel, function* handle({ action, args }: any) {
-    if (args.length > 0) ipcRenderer.sendTo(webcontentsId, action, args[0]);
+    if (args.length > 0) sendToCompat(webcontentsId, action, args[0]);
   });
 
   // yield takeEveryWitness(popupChannel, function* handle(rect: any) {

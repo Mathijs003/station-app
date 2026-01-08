@@ -9,8 +9,8 @@ import { startSessionsListening } from '../api/sessions';
 
 export default () => {
   
-  // make sure that `stream-electron-ipc` side-effect is called early
-  require('stream-electron-ipc');
+  // Initialize our in-repo IPC handler (replaces stream-electron-ipc side-effect)
+  require('../lib/firstConnectionHandler');
 
   startSessionsListening();
 

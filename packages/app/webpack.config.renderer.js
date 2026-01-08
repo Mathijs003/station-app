@@ -140,6 +140,10 @@ module.exports = (config) => {
 
   config.externals.push('react');
   config.externals.push('react-dom');
+  // Ensure electron is always external and not bundled
+  if (!config.externals.includes('electron')) {
+    config.externals.push('electron');
+  }
   config.externals = config.externals.filter(e => !externalsWhitelist.includes(e));
 
   return config;

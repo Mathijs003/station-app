@@ -81,12 +81,7 @@ export default class GenericWindowManager extends EventEmitter {
       webPreferences: {
         nodeIntegration: true,
         webviewTag: true,
-        // The following 2 parameters combined will disable the `same-origin` policy.
-        // This allows any window (and the worker) to make http requests to externals services
-        // without being filtered.
-        // For instance, without this, when the app runs with localhost files in dev,
-        // and it tries to make a request to the Slack API, the request sees all of its cookies disappear.
-        // With those parameters, the cookies are automatically added whatever the origin.
+        sandbox: false,
         //
         // Adding the cookies on-the-fly thanks to `session.webRequest.onBeforeSendHeaders` doesn't do anything.
         // @see https://gist.github.com/magne4000/15201a636978a1458095a996f2b26f25 for reproduction steps.

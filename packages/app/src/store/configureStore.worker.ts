@@ -12,7 +12,7 @@ import thunk from 'redux-thunk';
 // @ts-ignore: no declaration file
 import { server } from 'shared-redux';
 import { Duplex } from 'stream';
-import { firstConnectionHandler } from 'stream-electron-ipc';
+import { firstConnectionHandler } from '../services/lib/firstConnectionHandler';
 import { BrowserXAppWorker } from '../app-worker';
 import { ready } from '../app/duck';
 import observers, { delayedObservers } from '../observers';

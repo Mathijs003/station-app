@@ -38,6 +38,13 @@ export default class MainWindowManager extends GenericWindowManager {
 
     await super.load();
 
+    // Fallback: ensure window shows even if ready-to-show doesn't fire
+    setTimeout(() => {
+      if (this.window) {
+        this.show();
+      }
+    }, 2000);
+
     return this.window!;
   }
 

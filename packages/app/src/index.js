@@ -1,7 +1,6 @@
 /* eslint-disable global-require, import/first */
 import './utils/stat-cache';
 import './dotenv';
-import { webFrame, ipcRenderer } from 'electron';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
@@ -19,6 +18,9 @@ import ConsoleErrorBoundary from './common/containers/ConsoleErrorBoundary';
 import { ActionsBusReactContext, createActionsEmitter, createActionsBus } from './store/actionsBus';
 
 import { BxNotification } from './notification-center/webview-preload';
+
+// Dynamically require electron to avoid webpack bundling issues
+const { webFrame, ipcRenderer } = require('electron');
 
 window.Notification = BxNotification;
 

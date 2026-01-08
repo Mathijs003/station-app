@@ -1,5 +1,4 @@
-import { ipcRenderer } from 'electron';
-import { ElectronIpcRendererDuplex } from 'stream-electron-ipc';
+import { ElectronIpcRendererDuplex } from '../lib/ElectronIpcRendererDuplex';
 import rpcchannel, { RPCChannel } from 'stream-json-rpc';
 
 import { isPackaged } from '../../utils/env';
@@ -37,6 +36,8 @@ export const getMainPeerHandler = () => {
 };
 
 export const getWorkerPeerHandler = () => {
+  const electron: any = require('electron');
+  const ipcRenderer: any = electron.ipcRenderer;
   const workerWebContentsId = ipcRenderer.sendSync('get-worker-contents-id-sync');
   const duplex = new ElectronIpcRendererDuplex(workerWebContentsId, servicesDuplexNamespace);
   const channel: RPCChannel = rpcchannel(duplex, {

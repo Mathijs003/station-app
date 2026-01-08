@@ -178,14 +178,43 @@ export class SDKv2ServiceImpl extends SDKv2Service implements RPC.Interface<SDKv
 const getSenderId = (e: any) => typeof e.senderId === 'number' ? e.senderId :
   typeof e.sender.id === 'number' ? e.sender.id : 0;
 
+const RELAY_CHANNEL = 'sei-relay';
+
+const sendToCompat = (targetWebContentsId: number, channel: string, ...args: any[]) => {
+  if (typeof (ipcRenderer as any).sendTo === 'function') {
+    (ipcRenderer as any).sendTo(targetWebContentsId, channel, ...args);
+    return;
+  }
+
+  ipcRenderer.send(RELAY_CHANNEL, targetWebContentsId, channel, ...args);
+};
+
+const parseRelayedSenderAndChannel = <TChannel extends string>(
+  event: any,
+  senderIdOrChannel: any,
+  maybeChannel?: any,
+) => {
+  if (typeof senderIdOrChannel === 'number') {
+    return {
+      senderId: senderIdOrChannel,
+      channel: maybeChannel as TChannel,
+    };
+  }
+
+  return {
+    senderId: getSenderId(event),
+    channel: senderIdOrChannel as TChannel,
+  };
+};
+
 const initPreloadListener = (sdkv2: SDKv2ServiceImpl) => {
-  ipcRenderer.on('bx-api-subscribe', async (event: Electron.Event, channel: SDKv2Selectors) => {
-    const senderId = getSenderId(event);
+  ipcRenderer.on('bx-api-subscribe', async (event: Electron.Event, senderIdOrChannel: any, maybeChannel?: any) => {
+    const { senderId, channel } = parseRelayedSenderAndChannel<SDKv2Selectors>(event, senderIdOrChannel, maybeChannel);
     try {
       const subscription = await sdkv2.addObserver(channel, observer({
         on(result: any) {
           // event.sender.send doesn't seem to work for renderer-to-renderer comms
-          ipcRenderer.sendTo(senderId, `bx-api-subscribe-response-${channel}`, result);
+          sendToCompat(senderId, `bx-api-subscribe-response-${channel}`, result);
         },
       }));
 
@@ -197,12 +226,13 @@ const initPreloadListener = (sdkv2: SDKv2ServiceImpl) => {
     }
   });
 
-  ipcRenderer.on('bx-api-perform', (event: Electron.Event, channel: SDKv2Selectors, payload?: any) => {
-    const senderId = getSenderId(event);
+  ipcRenderer.on('bx-api-perform', (event: Electron.Event, senderIdOrChannel: any, maybeChannel?: any, maybePayload?: any) => {
+    const { senderId, channel } = parseRelayedSenderAndChannel<SDKv2Selectors>(event, senderIdOrChannel, maybeChannel);
+    const payload = typeof senderIdOrChannel === 'number' ? maybePayload : maybeChannel;
     sdkv2.callAction(channel, payload)
       .then(result => {
         // event.sender.send doesn't seem to work for renderer-to-renderer comms
-        ipcRenderer.sendTo(senderId, `bx-api-perform-response-${channel}`, result);
+        sendToCompat(senderId, `bx-api-perform-response-${channel}`, result);
       })
       .catch(handleError());
   });

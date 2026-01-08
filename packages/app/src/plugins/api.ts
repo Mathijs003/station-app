@@ -1,11 +1,13 @@
 import { SDK } from '@getstation/sdk';
 import { evolve } from 'ramda';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 import { BxAppManifest } from '../applications/manifest-provider/bxAppManifest';
 import { service } from '../services/lib/decorator';
 
 import { Transformer } from '../utils/fp';
 import { SDKConsumer } from './SDKProvider';
+
+const runtimeReq = require.context('../../manifests/runtime', true, /\.(ts|js)$/);
 
 type SDKActivator = (sdk: SDK, bx?: SDKConsumer) => Promise<void> | Observable<Error> | Promise<Observable<Error>> | any;
 type SDKDeactivator = (sdk: SDK, bx?: SDKConsumer) => void;
@@ -32,7 +34,7 @@ export interface ServiceRuntime {
 
 const ensureActivator: Transformer<SDKActivator, Activator> = activate => async (sdk: SDK, bx?: SDKConsumer) => {
   const result = await activate(sdk, bx);
-  return result instanceof Observable ? result : Observable.empty();
+  return result instanceof Observable ? result : EMPTY;
 };
 
 const ensureRuntime: Transformer<SDKServiceRuntime, ServiceRuntime> = evolve({
@@ -47,9 +49,17 @@ const ensureRuntime: Transformer<SDKServiceRuntime, ServiceRuntime> = evolve({
 export const getServiceRuntime = async (manifest: BxAppManifest): Promise<ServiceRuntime | void> => {
   if (!manifest || !manifest.main) return;
 
-  const sdkRuntime: ServiceRuntime = await import(
-    `../../manifests/runtime/${manifest.main}`)
-    .then(({ default: main }) => main);
+  const normalized = String(manifest.main).replace(/^\.\//, '').replace(/\.(ts|js)$/, '');
+  const key = runtimeReq.keys().find((k: string) => {
+    const kNorm = String(k).replace(/^\.\//, '').replace(/\.(ts|js)$/, '');
+    return kNorm === normalized;
+  });
+
+  if (!key) {
+    throw new Error(`Cannot find runtime module '${manifest.main}'`);
+  }
+
+  const sdkRuntime: ServiceRuntime = runtimeReq(key).default;
 
   return ensureRuntime(sdkRuntime);
 };
