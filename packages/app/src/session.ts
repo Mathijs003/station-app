@@ -64,7 +64,12 @@ These applications are sensitive to the User-Agent header and have to be recheck
 - Google Calendar (18.json)
 it's better to remove bx_override_user_agent attribute from manifest before the check to be sure that it's still necessary.
 */
-const defaultUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+// Derive the Chrome version from the Chromium bundled with the current Electron so the
+// User-Agent stays current across Electron upgrades. Web apps such as Slack reject browsers
+// whose reported Chrome version is too old ("This browser is no longer supported").
+// The minor/build/patch parts are frozen to 0 to match Chrome's reduced User-Agent format.
+const chromeMajorVersion = (process.versions.chrome || '142.0.7444.235').split('.')[0];
+const defaultUserAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeMajorVersion}.0.0.0 Safari/537.36`;
 
 const getUserAgentForApp = (url: string, currentUserAgent: string): string => {
 
