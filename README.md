@@ -18,6 +18,7 @@
 - [Migrations](#migrations)
   - [Inspect DB](#inspect-db)
 - [Packaging](#packaging)
+  - [Build and install locally (macOS)](#build-and-install-locally-macos)
   - [Code signing](#code-signing)
 - [Development tools](#development-tools)
 - [Releases](#releases)
@@ -136,6 +137,37 @@ To package apps for the local platform:
 
 ```bash
 $ yarn run build
+```
+
+#### Build and install locally (macOS)
+
+To build a full `.app` bundle from source and run it on your own machine (e.g. to test a change before it ships), package the `app` workspace with `electron-builder`:
+
+```bash
+$ cd packages/app
+$ yarn release
+```
+
+This runs the production webpack build and then `electron-builder`, producing:
+
+- `release/mac-universal/Station.app` — the universal (Intel + Apple Silicon) app bundle
+- `release/Station.dmg` — a disk image of the same build
+
+> **Note:** at the end of `yarn release`, `electron-builder` attempts to publish the artifacts to GitHub and fails with `GitHub Personal Access Token is not set` when `GH_TOKEN` is not configured. This error is safe to ignore — it happens *after* the `.app` and `.dmg` are already written to `release/`.
+
+Install the freshly built app by replacing the copy in `/Applications` (quit Station first, otherwise the running app cannot be replaced):
+
+```bash
+$ rm -rf /Applications/Station.app
+$ cp -R release/mac-universal/Station.app /Applications/
+```
+
+Alternatively, open `release/Station.dmg` and drag Station into Applications.
+
+Because local builds are made without a valid Apple `Developer ID Application` certificate, the app is **unsigned**. On first launch macOS Gatekeeper may block it — right-click the app → **Open**, or clear the quarantine flag:
+
+```bash
+$ xattr -cr /Applications/Station.app
 ```
 
 #### Code signing
